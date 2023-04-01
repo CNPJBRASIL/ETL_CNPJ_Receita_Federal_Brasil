@@ -36,20 +36,25 @@ class Check:
 
         print(self.files)
 
-        for file in self.files[0:8]:
+        for file in self.files:
             category = ''
             if file.startswith("Empresas"):
                 category = 'empresas'
             elif file.startswith("Estabelecimentos"):
-                category = 'estabelecimento'
+                category = 'estabelecimentos'
             elif file.startswith('Simples'):
                 category = 'simples'
             elif file.startswith('Socios'):
                 category = 'socios'
-            elif file.startswith('Saises'):
+            elif file.startswith('Paises'):
                 category = 'paises'
+            elif file.startswith('Municipios'):
+                category = 'municipios'
+            elif file.startswith('Naturezas'):
+                category = 'natureza_juridica'
             elif file.startswith('Cnae'):
                 category = 'cnae'
+
             
             if category:
                 path = f'{self.dir}\{file}'
