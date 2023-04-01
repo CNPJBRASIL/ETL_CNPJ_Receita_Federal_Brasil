@@ -8,5 +8,3 @@ import data_process
 #    down = download.Downloader(url)
 
 check = data_process.Check()
-df = check.df
-print(df)

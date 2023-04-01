@@ -1,5 +1,8 @@
 
 import pandas as pd
+import os
+import zipfile
+import chardet
 
 class Model:
     def __init__(self) -> None:
@@ -27,4 +30,39 @@ class Check:
         self.model = Model()
         self.col = self.model.empresas
         self.file = r"D:\CNPJ\zip_2023-03-15\Empresas0.zip"
-        self.df = pd.read_csv(self.file, compression='zip', sep=';',low_memory=False, nrows=5,names=self.col)
+        self.dir = r"D:\CNPJ\zip_2023-03-15"
+        self.df = pd.read_csv(self.file, compression='zip', sep=';',low_memory=False, nrows=5,names=self.col, encoding_errors='replace',  encoding='ISO-8859-1')
+        self.files = os.listdir(self.dir)
+
+        print(self.files)
+
+        for file in self.files[0:8]:
+            category = ''
+            if file.startswith("Empresas"):
+                category = 'empresas'
+            elif file.startswith("Estabelecimentos"):
+                category = 'estabelecimento'
+            elif file.startswith('Simples'):
+                category = 'simples'
+            elif file.startswith('Socios'):
+                category = 'socios'
+            elif file.startswith('Saises'):
+                category = 'paises'
+            elif file.startswith('Cnae'):
+                category = 'cnae'
+            
+            if category:
+                path = f'{self.dir}\{file}'
+                try:
+
+
+                    df = pd.read_csv(path, compression='zip', sep=';',low_memory=False, nrows=3,names=self.model.__dict__[category], dtype=str, encoding='ansi')
+                    print(file)
+                    print(df)
+
+                except Exception as error:
+                    print(file, error)
+                    
+
+if "__main__" == __name__:
+    check = Check()
