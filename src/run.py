@@ -7,4 +7,6 @@ import data_process
 #    print(url)
 #    down = download.Downloader(url)
 
-check = data_process.Check()
+dir = r"D:\CNPJ\zip_2023-03-15"
+process = data_process.Process(dir)
+

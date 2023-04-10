@@ -1,8 +1,10 @@
 
 import pandas as pd
 import os
-import zipfile
-import chardet
+import sqlite3
+import time
+import re
+from zipfile import ZipFile
 
 class Model:
     def __init__(self) -> None:
@@ -15,6 +17,12 @@ class Model:
         self.municipios = ['codigo','descricao']
         self.natureza_juridica = ['codigo','descricao']
         self.cnae = ['codigo','descricao']
+        
+    def get(self, file_name):
+        table  = re.sub('\d+(?=\.zip)', '', file_name).replace('%20','_').replace('.zip', '').lower()
+        
+        return {'table':table, 'columns':self.__dict__.get(table)}
+
 
     def get_model(self, file_name):
         category = ''
@@ -34,17 +42,64 @@ class Model:
             category = 'natureza_juridica'
         elif file_name.startswith('Cnae'):
             category = 'cnae'
+        
 
         return {'table':category, 'columns':self.__dict__[category]}
     
 
+class File:
+    def __init__(self, dir, file_name) -> None:
+        self.dir = dir
+        self.file_name = file_name
+        self.path = f'{self.dir}\{self.file_name}'
+        self.model = Model().get(file_name=self.file_name)
+        self.table = self.model['table']
+        self.columns = self.model['columns']
+        self.df = ''
+       
+
+    def extract_to_df(self):
+       if self.columns == None:
+           separator = ','
+       else:
+           separator = ';'
+    
+       self.df = pd.read_csv(self.path, compression= 'zip', sep= separator, low_memory= False, names= self.columns, dtype=str, encoding='ansi')
+
+    
 class Process:
     def __init__(self, dir) -> None:
         self.dir = dir
+        self.files = [f for f in os.listdir(self.dir) if f.endswith('.zip')]
+        self.path_db = r'D:\OneDrive\Dev\ETL_CNPJ_Receita_Federal_Brasil\data\cnpj_db.sqlite' 
+        self.conn = sqlite3.connect(self.path_db)
+
+        _start_time = time.time()
+        print('Processo iniciado')
+
+        for file in self.files:
+            _start_time = time.time()
+
+            file_obj = File(dir=self.dir, file_name=file)
+            file_obj.extract_to_df()
+            file_obj.df.to_sql(file_obj.table, self.conn, if_exists='append', index=False, chunksize=100_000)
+            
+            _end_time = time.time();
+            _elapsed_time = _end_time - _start_time
+            _hours, _remainder = divmod(_elapsed_time, 3600)
+            _minutes, _seconds = divmod(_remainder, 60)
+            print(f"Arquivo {file} processado em {int(_hours)}H:{int(_minutes)}M:{_seconds:.2f}S")
+
+        _end_time = time.time();
+        _elapsed_time = _end_time - _start_time
+        _hours, _remainder = divmod(_elapsed_time, 3600)
+        _minutes, _seconds = divmod(_remainder, 60)
+        print(f"Processo demorou: {int(_hours)}H:{int(_minutes)}M:{_seconds:.2f}S")
 
 
 
 
+# only check file in coding
 class Check:
     def __init__(self) -> None:
         self.model = Model()
