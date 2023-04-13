@@ -9,18 +9,20 @@ from zipfile import ZipFile, ZIP_BZIP2
 class Model:
     def __init__(self) -> None:
 
-        self.Empresas = ['cnpj_base', 'nome', 'natureza_juridica', 'qualificacao', 'capital_social', 'porte', 'ente']
-        self.Estabelecimentos = ['cnpj_base', 'cnpj_ordem', 'cnpj_dv', 'identificador', 'nome_fantasia', 'data_situacao_cadastral', 'motivo_situacao_cadastral', 'cidade_exterior', 'pais', 'data_inicio_atividade', 'cnae_fiscal_principal', 'cnae_fiscal_secundaria', 'tipo_logradouro', 'logradouro', 'numero', 'complemento', 'bairro', 'cep', 'uf', 'municipio', 'ddd1', 'telefone1', 'ddd2', 'telefone2', 'ddd_fax', 'fax', 'correio_eletronico', 'situacao_especial', 'data_situacao_especial']
-        self.Simples = ['cnpj_base', 'opcao_simples', 'data_opcao_simples', 'data_exclusao_simples', 'opcao_mei', 'data_opcao_mei', 'data_exclusao_mei']
-        self.Socios = ['cnpj_base','identificador_socio','nome_socio','cpf_cnpj','qualificao_socio','data_entrada','pais','representante_legal','nome_representante','qualificacao_representante_legal','faixa_etaria']
-        self.Paises = ['codigo','descricao']
-        self.Municipios = ['codigo','descricao']
-        self.Naturezas = ['codigo','descricao']
-        self.Cnaes = ['codigo','descricao']
+        self.empresas = ['cnpj_base', 'nome', 'natureza_juridica', 'qualificacao', 'capital_social', 'porte', 'ente']
+        self.estabelecimentos = ['cnpj_base', 'cnpj_ordem', 'cnpj_dv', 'identificador', 'nome_fantasia', 'data_situacao_cadastral', 'motivo_situacao_cadastral', 'cidade_exterior', 'pais', 'data_inicio_atividade', 'cnae_fiscal_principal', 'cnae_fiscal_secundaria', 'tipo_logradouro', 'logradouro', 'numero', 'complemento', 'bairro', 'cep', 'uf', 'municipio', 'ddd1', 'telefone1', 'ddd2', 'telefone2', 'ddd_fax', 'fax', 'correio_eletronico', 'situacao_especial', 'data_situacao_especial']
+        self.simples = ['cnpj_base', 'opcao_simples', 'data_opcao_simples', 'data_exclusao_simples', 'opcao_mei', 'data_opcao_mei', 'data_exclusao_mei']
+        self.socios = ['cnpj_base','identificador_socio','nome_socio','cpf_cnpj','qualificao_socio','data_entrada','pais','representante_legal','nome_representante','qualificacao_representante_legal','faixa_etaria']
+        self.paises = ['codigo','descricao']
+        self.municipios = ['codigo','descricao']
+        self.naturezas = ['codigo','descricao']
+        self.cnaes = ['codigo','descricao']
         
+    def get_columns(self, table_name):
+        return self.__dict__.get(table_name)
+
     def get(self, file_name):
         table  = re.sub('\d+(?=\.zip)', '', file_name).replace('%20','_').replace('.zip', '').lower()
-        
         return {'table':table, 'columns':self.__dict__.get(table)}
 
 
@@ -29,19 +31,38 @@ class File:
         self.dir = dir
         self.file_name = file_name
         self.path = f'{self.dir}\{self.file_name}'
+        self.table_name  = re.sub('\d+(?=\.zip)', '', self.file_name).replace('%20','_').replace('.zip', '').lower()
+        self.columns = Model().get_columns( table_name= self.table_name )
+        self.separator = "," if self.columns == None else ";" 
+
         self.model = Model().get(file_name=self.file_name)
         self.table = self.model['table']
         self.columns = self.model['columns']
         self.df = ''
-       
-
-    def extract_to_df(self):
-       if self.columns == None:
-           separator = ','
-       else:
-           separator = ';'
     
-       self.df = pd.read_csv(self.path, compression= 'zip', sep= separator, low_memory= False, names= self.columns, dtype=str, encoding='ansi')
+
+    def check_zip(self):
+        # verifica se o zip tem  mais de 1 arquivo compactado. Descompacta e compacta cada subarquivo no mesmo diretório
+        with ZipFile(f'{self.path}', 'r') as zip:
+            self.sub_files = zip.namelist()
+            self.qt = len(self.sub_files)
+        
+            if self.qt > 1:
+        
+                for sub_file in self.sub_files:
+                    zip.extract( sub_file, path=f'{self.dir}\\')
+                    
+                    with ZipFile(f'{self.dir}\{sub_file.replace(".csv","").replace(" ","")}.zip', 'w', compression=ZIP_BZIP2) as sub_zip:
+                        sub_zip.write(f'{self.dir}\{sub_file}')
+                    
+                    os.remove( f'{self.dir}\{sub_file}')
+
+
+    def extract_to_df(self):   
+       self.df = pd.read_csv(self.path, compression= 'zip', sep= self.separator, low_memory= False, names= self.columns, dtype=str, encoding='ansi')
+
+    def df_to_sql(self, conn):
+        self.df.to_sql(self.table, conn, if_exists='append', index=False, chunksize=100_000)
 
     
 class Process:
@@ -53,19 +74,6 @@ class Process:
 
         _start_time = time.time()
         print('Processo iniciado')
-
-        # verifica os arquivos zip que tenham mais de 1 arquivo compactado. Descompacta e compacta cada subarquivo
-        for file in self.files:
-            with ZipFile(f'{self.dir}\{file}', 'r') as zip:
-                sub_files = zip.namelist()
-                qt = len(sub_files)
-                if qt > 1:
-                    for sub_file in sub_files:
-                        zip.extract( sub_file, path=f'{self.dir}\\')
-                        with ZipFile(f'{self.dir}\{sub_file.replace(".csv","").replace(" ","")}.zip', 'w', compression=ZIP_BZIP2) as sub_zip:
-                            sub_zip.write(f'{self.dir}\{sub_file}')
-                        os.remove( f'{self.dir}\{sub_file}')
-
 
 
 
