@@ -9,4 +9,5 @@ import data_process
 
 dir = r"D:\CNPJ\zip_2023-03-15"
 process = data_process.Process(dir)
+process.extract_insert()
 
