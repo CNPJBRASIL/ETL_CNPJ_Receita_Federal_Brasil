@@ -17,6 +17,10 @@ class Model:
         self.municipios = ['codigo','descricao']
         self.naturezas = ['codigo','descricao']
         self.cnaes = ['codigo','descricao']
+        self.motivos = ['codigo','descricao']
+        self.qualificacoes = ['codigo','descricao']
+        
+
         
     def get_columns(self, table_name):
         return self.__dict__.get(table_name)
@@ -30,10 +34,13 @@ class File:
         self.table_name  = re.sub('\d+(?=\.zip)', '', self.file_name).replace('%20','_').replace('.zip', '').lower()
         self.columns = Model().get_columns( table_name= self.table_name )
         self.separator = "," if self.columns == None else ";" 
-
+       # verifica se o zip tem  mais de 1 arquivo compactado. Descompacta e compacta cada subarquivo no mesmo diretório
+        with ZipFile(f'{self.path}', 'r') as zip:
+            self.sub_files = zip.namelist()
+            self.qt = len(self.sub_files)
 
     def check_zip(self):
-        # verifica se o zip tem  mais de 1 arquivo compactado. Descompacta e compacta cada subarquivo no mesmo diretório
+        
         with ZipFile(f'{self.path}', 'r') as zip:
             self.sub_files = zip.namelist()
             self.qt = len(self.sub_files)
@@ -58,8 +65,10 @@ class File:
 
     
 class Process:
-    def __init__(self, dir) -> None:
-        self.dir = dir
+    def __init__(self, folder) -> None:
+        self.folder = folder
+        self.dir_path = os.path.abspath('.\data')
+        self.dir = os.path.join(self.dir_path, self.folder)
         # Unzip sub zip files
         self.files = [File(self.dir, file_name).check_zip() for file_name in os.listdir(self.dir) if file_name.endswith('.zip')]
         # Overwrite self.files to get new subfiles unziped before
@@ -67,11 +76,15 @@ class Process:
         
     
     def extract_insert(self):
-        self.path_db = r'D:\OneDrive\Dev\ETL_CNPJ_Receita_Federal_Brasil\db\cnpj_db.sqlite' 
+        self.dir_path = os.path.abspath('..\db')
+        self.path_db = os.join(self.dir_path, cnpj_db.sqlite)
         self.conn = sqlite3.connect(self.path_db)
         
 
         for file in self.files2:
+            if file.qt > 1:
+                continue
+
             file.extract_to_df()
             file.df_to_sql(self.conn)
 

@@ -4,12 +4,16 @@ import os
 
 class Downloader:
 
-    def __init__(self, url) -> None:
+    def __init__(self, url, folder) -> None:
+        self.dir = os.path.abspath('.\data')
+        self.dir_temp = os.path.abspath(r'.\temp')
         self.url = url
         self.file_name = self.url.split('/')[-1]
         self.num_threads = 10 # number of threads to use for downloading
-        self.path_final = r"D:\CNPJ\zip_2023-03-15"
-
+        self.folder = folder
+        self.path_final = os.path.join(self.dir, self.folder)
+        print(self.path_final)
+        
         self.response = requests.head(url)
         self.file_size = int(self.response.headers.get("Content-Length", 0))
         self.part_size = self.file_size // self.num_threads # size of each part
@@ -27,7 +31,7 @@ class Downloader:
 
         with open(os.path.join(self.path_final, self.file_name), "wb") as f:
             for i in range(self.num_threads):
-                part_file = f"part{i}.zip"
+                part_file = os.path.join(self.dir_temp, f"part{i}.zip")
                 with open(part_file, "rb") as part:
                     f.write(part.read())
 
@@ -40,7 +44,7 @@ class Downloader:
         headers = {"Range": f"bytes={start}-{end}"}
         r = requests.get(self.url, headers=headers, stream=True)
 
-        with open(f"part{part_num}.zip", "wb") as f:
+        with open(os.path.join(self.dir_temp, f"part{part_num}.zip"), "wb") as f:
             for chunk in r.iter_content(chunk_size=1024):
                 if chunk:
                     f.write(chunk)
