@@ -1,6 +1,7 @@
 import requests
 import threading
 import os
+import scrap
 
 class Downloader:
 
@@ -12,7 +13,7 @@ class Downloader:
         self.num_threads = 10 # number of threads to use for downloading
         self.folder = folder
         self.path_final = os.path.join(self.dir, self.folder)
-        print(self.path_final)
+        
         
         self.response = requests.head(url)
         self.file_size = int(self.response.headers.get("Content-Length", 0))
@@ -35,7 +36,8 @@ class Downloader:
                 with open(part_file, "rb") as part:
                     f.write(part.read())
 
-                os.remove(part_file)
+                while os.path.exists(part_file):
+                    os.remove(part_file)
 
         print(self.file_name, self.file_size)
 
@@ -48,3 +50,4 @@ class Downloader:
             for chunk in r.iter_content(chunk_size=1024):
                 if chunk:
                     f.write(chunk)
+

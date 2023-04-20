@@ -5,6 +5,7 @@ import sqlite3
 import time
 import re
 from zipfile import ZipFile, ZIP_BZIP2
+import hashlib
 
 class Model:
     def __init__(self) -> None:
@@ -57,8 +58,19 @@ class File:
 
 
     def extract_to_df(self):   
-       self.df = pd.read_csv(self.path, compression= 'zip', sep= self.separator, low_memory= False, names= self.columns, dtype=str, encoding='ansi')
+       self.df = pd.read_csv(self.path, compression= 'zip', sep= self.separator, low_memory= False, names= self.columns, dtype=str, encoding='ansi', quotechar='"')
        self.df_len = len(self.df)
+
+
+    def update_df(self):
+        self.df['File_Name'] = self.file_name
+
+        def hash(row):
+            return hashlib.sha256(row.encode('utf-8')).hexdigest()
+
+        cols = list(self.df.columns)
+        self.df['hash'] = self.df[cols].apply(lambda row: hash(''.join(row.values.astype(str))), axis=1)
+
 
     def df_to_sql(self, conn):
         self.df.to_sql(self.table_name, conn, if_exists='append', index=False, chunksize=100_000)
@@ -77,7 +89,7 @@ class Process:
     
     def extract_insert(self):
         self.dir_path = os.path.abspath('..\db')
-        self.path_db = os.join(self.dir_path, cnpj_db.sqlite)
+        self.path_db = os.path.join(self.dir_path, 'cnpj_db.sqlite')
         self.conn = sqlite3.connect(self.path_db)
         
 
@@ -88,7 +100,7 @@ class Process:
             file.extract_to_df()
             file.df_to_sql(self.conn)
 
-            print(file.file_name, file.df_len)
+            print(file.file_name, file.df_len, 'DONE')
             
             # Clear df  to  economy memory
             file.df = None
