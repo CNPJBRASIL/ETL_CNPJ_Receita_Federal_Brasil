@@ -40,6 +40,7 @@ class File:
             self.sub_files = zip.namelist()
             self.qt = len(self.sub_files)
 
+  
     def check_zip(self):
         
         with ZipFile(f'{self.path}', 'r') as zip:
@@ -88,12 +89,14 @@ class Process:
         
     
     def extract_insert(self):
-        self.dir_path = os.path.abspath('..\db')
-        self.path_db = os.path.join(self.dir_path, 'cnpj_db.sqlite')
+        self.dir_path_db = os.path.abspath('.\db')
+        self.path_db = os.path.join(self.dir_path_db, 'cnpj_db.sqlite')
+
+
         self.conn = sqlite3.connect(self.path_db)
         
-
         for file in self.files2:
+           
             if file.qt > 1:
                 continue
 
