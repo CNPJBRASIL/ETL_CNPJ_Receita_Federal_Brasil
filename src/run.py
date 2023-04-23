@@ -2,6 +2,8 @@ import scrap
 import download
 import data_process
 import os
+import datetime
+now = datetime.datetime.now()
 
 
 
@@ -26,6 +28,10 @@ class Runner():
 
 
 if "__main__" == __name__:
+    print('START: ', datetime.datetime.now())
+
     runner = Runner()
-    #runner.download()
+    runner.download()
     runner.process_files()
+
+    print('END: ', datetime.datetime.now())
