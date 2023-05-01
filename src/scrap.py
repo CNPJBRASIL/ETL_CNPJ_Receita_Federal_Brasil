@@ -29,3 +29,31 @@ class Scraper:
     @property
     def urls(self):
         return self.files
+
+
+    def save_cnpj(self):
+        # Table CNPJ
+        self.soup_table = BeautifulSoup(self.response_cnpj.content, 'html.parser').find('table')
+        self.rows = self.soup_table.find_all('tr')
+
+        for row in self.rows:
+            row_a = row.find('a')
+            if row_a:
+                name = row_a.get('href')
+                if name.endswith('.zip') | name.endswith('.pdf') :
+                    print(f'{self.url_cnpj}{name}', row.find_all('td')[2].get_text(), row.find_all('td')[3].get_text() )
+    
+
+    def save_tributario(self):
+        # Table Tributa
+        self.soup_table = BeautifulSoup(self.response_tributario.content, 'html.parser').find('table')
+        self.rows = self.soup_table.find_all('tr')
+
+        for row in self.rows:
+            row_a = row.find('a')
+            if row_a:
+                name = row_a.get('href')
+                if name.endswith('.zip') | name.endswith('.pdf') :
+                    print(f'{self.url_tributario}{name}', row.find_all('td')[2].get_text(), row.find_all('td')[3].get_text() )
+          
+

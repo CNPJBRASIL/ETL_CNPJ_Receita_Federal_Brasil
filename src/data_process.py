@@ -101,6 +101,7 @@ class Process:
                 continue
 
             file.extract_to_df()
+            file.update_df()
             file.df_to_sql(self.conn)
 
             print(file.file_name, file.df_len, 'DONE')
