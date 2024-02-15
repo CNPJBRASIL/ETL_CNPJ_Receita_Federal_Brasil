@@ -4,9 +4,6 @@ from bs4 import BeautifulSoup
 
 class Scraper:
     def __init__(self) -> None:
-        # http://200.152.38.155/CNPJ/
-        #self.url_cnpj = r'https://dadosabertos.rfb.gov.br/CNPJ/'
-        #self.url_tributario = r'https://dadosabertos.rfb.gov.br/CNPJ/regime_tributario/'
         self.url_cnpj = r'http://200.152.38.155/CNPJ/'
         self.url_tributario = r'http://200.152.38.155/CNPJ/regime_tributario/'
         self.files = []
@@ -57,3 +54,7 @@ class Scraper:
                     print(f'{self.url_tributario}{name}', row.find_all('td')[2].get_text(), row.find_all('td')[3].get_text() )
           
 
+if '__main__'==__name__:
+    scrap = Scraper()
+    print(scrap.urls)
+    scrap.save_cnpj()

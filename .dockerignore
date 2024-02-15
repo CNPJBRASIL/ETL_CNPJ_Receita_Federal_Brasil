@@ -1,0 +1,5 @@
+.git*
+**/*.pyc
+.venv/
+data/*
+db
